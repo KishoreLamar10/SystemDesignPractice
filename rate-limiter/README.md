@@ -96,6 +96,14 @@ Different clients get different limits — e.g. authenticated users get higher l
 
 If Redis or the limiter itself becomes unavailable, the default behavior is to **fail open** — let requests through unchecked — because protecting overall system availability takes priority over strict enforcement (matching the availability-over-consistency requirement). **Fail-closed** (reject when the limiter is down) is reserved for high-risk endpoints like authentication or payments, where letting traffic through unprotected is worse than briefly rejecting requests.
 
+**How fail-open actually works, mechanically:**
+
+- The gateway calls `isRequestAllowed(clientId, rulesId)` with a short timeout (well under the 10ms latency budget) on the critical path of every request.
+- If that call errors or times out — Redis shard down, network partition, connection pool exhausted — the gateway treats the failure itself as the signal, and its fallback path returns `{ passes: true }` by default instead of blocking the request.
+- So a Redis outage degrades the system from *"rate-limited"* to *"temporarily unlimited,"* never from *"up"* to *"down."* The rate limiter is explicitly not allowed to become a single point of failure for request handling itself, even though that means limits go briefly unenforced during the outage.
+- Recovery is self-healing, not manual: the affected shard's replica gets promoted (see Resilience above), the gateway's next checks start succeeding again, and enforcement resumes automatically — no intervention needed to exit the fail-open window.
+- This default is scoped **per endpoint**, not global — a config flag per route decides fail-open vs. fail-closed, so auth/payment endpoints can flip to fail-closed while the rest of the system stays fail-open.
+
 ### Why Redis specifically
 
 Redis is single-threaded per shard and supports atomic Lua scripting, which makes check-and-decrement operations race-free without needing external locks — a good fit for a high-throughput, low-latency counter workload like this one.
