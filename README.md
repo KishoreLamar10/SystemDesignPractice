@@ -12,5 +12,6 @@ A collection of system design practice write-ups — each subfolder works throug
 | [Distributed Cache](./distributed-cache/README.md) | A sharded, cache-aside caching layer: LRU eviction, consistent hashing with virtual nodes and replicas, and mitigations for stampedes, inconsistency, and hot keys. |
 | [Notification System](./notification-system/README.md) | A multi-channel (email/SMS/push) notification service: per-channel queues and workers, retry with dead-lettering, idempotent delivery, and opt-out-aware rate limiting. |
 | [Design Twitter](./design-twitter/README.md) | A Twitter-style social feed: sharded tweet storage, hybrid fan-out (write for normal users, read for celebrities), Kafka-driven async timeline generation, and Redis-cached feeds. |
+| [Design WhatsApp](./design-whatsapp/README.md) | A WhatsApp-style real-time messenger: WebSocket gateways with a Sessions Service for cross-node routing, delivery receipts, offline persistence, and Kafka-backed at-least-once delivery. |
 
 More designs will be added here as they're completed.
